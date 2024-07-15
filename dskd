@@ -1,0 +1,63 @@
+package main
+
+    import 
+        "fmt"
+        "sort 
+
+    type Document struct {
+        URL          string
+        PubDate      uint64
+        FetchTime    uint64
+        Text         string
+        FirstFetchTime uint64
+    }
+
+    type Processor interface {
+        Process([]Document) (Document, error)
+    }
+
+    type DocumentProcessor struct{}
+
+    func (dp *DocumentProcessor) Process(docs []Document) (Document, error) {
+        if len(docs) == 0 {
+            return Document{}, fmt.Errorf("no documents provided")
+        }
+
+        // Sort documents by FetchTime
+        sort.Slice(docs, func(i, j int) bool {
+            return docs[i].FetchTime < docs[j].FetchTime
+        })
+
+        // Initialize the resulting document with the first document's data
+        result := docs[0]
+        result.FirstFetchTime = docs[0].FetchTime
+
+        for _, doc := range docs {
+            if doc.FetchTime > result.FetchTime {
+                result.Text = doc.Text
+                result.FetchTime = doc.FetchTime
+                result.PubDate = doc.PubDate
+            }
+            if doc.FetchTime < result.FirstFetchTime {
+                result.FirstFetchTime = doc.FetchTime
+            }
+        }
+
+        return result, nil
+    }
+
+    func main() {
+        docs := []Document{
+            {URL: "http://example.com", PubDate: 2, FetchTime: 3, Text: "Doc 1"},
+            {URL: "http://example.com", PubDate: 1, FetchTime: 1, Text: "Doc 2"},
+            {URL: "http://example.com", PubDate: 3, FetchTime: 2, Text: "Doc 3"},
+        }
+
+        processor := &DocumentProcessor{}
+        result, err := processor.Process(docs)
+        if err != nil {
+            fmt.Println("Error:", err)
+        } else {
+            fmt.Printf("Result: %+v\n", result)
+        }
+    }
